@@ -8,6 +8,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, BotCommand
 from aiogram.filters import Command
 from aiogram.client.default import DefaultBotProperties
+from aiohttp import web
 
 TOKEN = os.environ["BOT_TOKEN"]
 ALLOWED_THREAD_ID = 3447
@@ -120,7 +121,7 @@ async def help_command(message: Message):
 async def welcome_new_member(message: Message):
     for member in message.new_chat_members:
         if member.id != bot.id:
-            await message.answer(f"👋 Добро пожаловать в WITUS, {member.full_name}\n")
+            await message.answer(f"👋 Добро пожаловать в WITUS, {member.full_name} ❗️")
 
 @dp.message()
 async def check_links(message: Message):
@@ -188,12 +189,39 @@ async def set_commands():
     ]
     await bot.set_my_commands(commands)
 
+# ============================================
+# ВЕБ-СЕРВЕР ДЛЯ RENDER
+# ============================================
+
+async def health_check(request):
+    return web.Response(text="OK")
+
+async def run_web_server():
+    app = web.Application()
+    app.router.add_get('/health', health_check)
+    app.router.add_get('/', health_check)
+    
+    port = int(os.environ.get("PORT", 8080))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    
+    print(f"✅ Веб-сервер запущен на порту {port}")
+    
+    # Держим сервер запущенным бесконечно
+    await asyncio.Event().wait()
+
 async def main():
+    # Запускаем веб-сервер в фоновом режиме
+    asyncio.create_task(run_web_server())
+    
     print("=" * 50)
     print("🚀 БОТ ЗАПУЩЕН")
     print(f"✅ Папка «ОБМЕННИК» (ID: {ALLOWED_THREAD_ID})")
     print(f"⚠️ Максимум предупреждений: {settings['max_warnings']}")
     print("=" * 50)
+    
     await set_commands()
     await dp.start_polling(bot)
 
