@@ -120,7 +120,7 @@ async def help_command(message: Message):
 async def welcome_new_member(message: Message):
     for member in message.new_chat_members:
         if member.id != bot.id:
-            await message.answer(f"👋 Добро пожаловать в WITUS, {member.full_name}\n❗️")
+            await message.answer(f"👋 Добро пожаловать в WITUS, {member.full_name}\n")
 
 @dp.message()
 async def check_links(message: Message):
